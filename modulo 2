@@ -1,0 +1,752 @@
+Sub Importar_dados_reais()
+
+'entradas
+Dim Lat As Double
+Dim Lon As Double
+
+Dim Vm As Double
+Dim Tetam As Double
+
+Dim Altura As Double
+
+Dim Tempo_de_Mergulho As Double
+
+'operação
+Dim linhas As Double
+Dim Stoplinhas As Double
+Dim MSG
+
+'componentes
+Dim Massa_aviao As Double
+Dim g As Double
+Dim Area_do_aviao As Double
+Dim Cof_Atrito_X As Double
+
+Dim Velo_Terminal As Double
+
+'componentes2
+Dim Lat250 As Double
+Dim Lon250 As Double
+
+Dim Profundidade As Double
+Dim Tempo As Double
+Dim Deslocamento As Double
+
+    'colentando dados______________________
+    Sheets(3).Select
+    Lat = Range("L24")
+    Lon = Range("N24")
+    linhas = 28
+    
+    Do Until Cells(linhas, 15) = ""
+    linhas = linhas + 1
+    Loop
+    
+    If linhas = 28 Then
+        Stoplinhas = linhas
+    Else
+        Stoplinhas = linhas - 1
+    End If
+    
+    If Cells(28, 17) = "" Then
+        MsgBox "Relatório de deslocamento de destroços não foi executado, por favor execute este relatório para então executar esta função.", vbExclamation, "Sem Dados"
+        Exit Sub
+    End If
+    
+    linhas = 28
+    
+    Vm = Cells(linhas, 17)
+    Tetam = Cells(linhas, 22)
+    
+    Sheets(4).Select
+    
+    Reset_Config
+    
+    Range("C3") = Lat
+    Range("C4") = Lon
+    Range("C22") = Vm
+    Range("E22") = Tetam
+    Range("C8") = 9.80665 '[contem erro de ±0,0170000000000003 m/s]
+    Range("C9") = ((1.017 + 1.03) / 2) * 1000  'valores em g/cm³ convertidos em kg/m³ (1 g/cm³ = 1000 kg/m³) [erro de ±6.5 kg/m³]
+    
+    If Range("C6") = "" Or Range("C7") = "" Or Range("C8") = "" Or Range("C9") = "" Or Range("C11") = "" Or Range("C16") = "" Or Range("E16") = "" Or Range("G16") = "" Or Range("C17") = "" Or Range("E17") = "" Or Range("G17") = "" Or Range("C18") = "" Or Range("E18") = "" Or Range("G18") = "" Then
+        MSG = MsgBox("Há alguns dados faltando, gostaria de utilizar dados genericos em sua simulação?", vbYesNo, "Dados faltando")
+        If MSG = vbYes Then
+            dados_genericos
+            
+        End If
+        If MSG = vbNo Then
+            Dados_faltando
+            MsgBox "Por favor, insira seus dados nos campos com o simbolo (?)", vbInformation, "Insira seus dados"
+            
+        End If
+    End If
+End Sub
+
+Sub dados_genericos()
+If Range("C6") = "" Then
+ Range("C6") = "h"
+End If
+If Range("E6") = "" Then
+ Range("E6") = (((70.6 + 76.25) / 2) * ((59.6 + 64.4 + 68.5) / 3) + (68.28 * 60.12)) / 2
+End If
+If Range("C7") = "" Then
+ Range("C7") = (((333390 + 37784 + 37784 + 396890 + 412775 + 447696) / 5) + 253000) / 2 '((toda linha 747)+(787))/2
+End If
+If Range("C8") = "" Then
+ Range("C8") = 9.80665 '[contem erro de ±0,0170000000000003 m/s]
+End If
+If Range("C9") = "" Then
+ Range("C9") = ((1.017 + 1.03) / 2) * 1000 'valores em g/cm³ convertidos em kg/m³ (1 g/cm³ = 1000 kg/m³) [erro de ±6.5 kg/m³]
+End If
+If Range("C11") = "" Then
+ Range("C11") = (0.031 + 0.024) / 2 '[ contem erro de ±0.035]
+End If
+If Range("C12") = "" Then
+ Range("C12") = 0
+End If
+If Range("C13") = "" Then
+ Range("C13") = 0
+End If
+If Range("C16") = "" Then
+ Range("C16") = "X"
+End If
+If Range("E16") = "" Then
+ Range("E16") = "X"
+End If
+If Range("G16") = "" Then
+ Range("G16") = "X"
+End If
+If Range("C17") = "" Then
+ Range("C17") = 0
+End If
+If Range("E17") = "" Then
+ Range("E17") = (6 + 10) / 2 'contem erro de 2 min
+End If
+If Range("G17") = "" Then
+ Range("G17") = 0
+End If
+If Range("C18") = "" Then
+ Range("C18") = 1
+End If
+If Range("E18") = "" Then
+ Range("E18") = 0
+End If
+If Range("G18") = "" Then
+ Range("G18") = 0
+End If
+If Range("C22") = "" Then
+ Range("C22") = "?" 'relativo... aqui seria Vm
+End If
+If Range("C23") = "" Then
+ Range("C23") = "X"
+End If
+If Range("C24") = "" Then
+ Range("C24") = 0
+End If
+If Range("C25") = "" Then
+ Range("C25") = 0
+End If
+If Range("C26") = "" Then
+ Range("C26") = 0
+End If
+If Range("C27") = "" Then
+ Range("C27") = 0
+End If
+If Range("E22") = "" Then
+ Range("E22") = "?" 'relativo... aqui seria Tetam
+End If
+If Range("E23") = "" Then
+ Range("E23") = "X"
+End If
+If Range("E24") = "" Then
+ Range("E24") = 0
+End If
+If Range("E25") = "" Then
+ Range("E25") = 0
+End If
+If Range("E26") = "" Then
+ Range("E26") = 0
+End If
+If Range("E27") = "" Then
+ Range("E27") = 0
+End If
+End Sub
+
+Sub Dados_faltando()
+If Range("C6") = "" Then
+ Range("C6") = "?"
+End If
+If Range("E6") = "" Then
+ Range("E6") = "?"
+End If
+If Range("C7") = "" Then
+ Range("C7") = "?"
+End If
+If Range("C8") = "" Then
+ Range("C8") = "?"
+End If
+If Range("C9") = "" Then
+ Range("C9") = "?"
+End If
+If Range("C11") = "" Then
+ Range("C11") = "?"
+End If
+If Range("C12") = "" Then
+ Range("C12") = "?"
+End If
+If Range("C13") = "" Then
+ Range("C13") = "?"
+End If
+If Range("C16") = "" Then
+ Range("C16") = "?"
+End If
+If Range("E16") = "" Then
+ Range("E16") = "?"
+End If
+If Range("G16") = "" Then
+ Range("G16") = "?"
+End If
+If Range("C17") = "" Then
+ Range("C17") = "?"
+End If
+If Range("E17") = "" Then
+ Range("E17") = "?"
+End If
+If Range("G17") = "" Then
+ Range("G17") = "?"
+End If
+If Range("C18") = "" Then
+ Range("C18") = "?"
+End If
+If Range("E18") = "" Then
+ Range("E18") = "?"
+End If
+If Range("G18") = "" Then
+ Range("G18") = "?"
+End If
+If Range("C22") = "" Then
+ Range("C22") = "?"
+End If
+If Range("C23") = "" Then
+ Range("C23") = "?"
+End If
+If Range("C24") = "" Then
+ Range("C24") = "?"
+End If
+If Range("C25") = "" Then
+ Range("C25") = "?"
+End If
+If Range("C26") = "" Then
+ Range("C26") = "?"
+End If
+If Range("C27") = "" Then
+ Range("C27") = "?"
+End If
+If Range("E22") = "" Then
+ Range("E22") = "?"
+End If
+If Range("E23") = "" Then
+ Range("E23") = "?"
+End If
+If Range("E24") = "" Then
+ Range("E24") = "?"
+End If
+If Range("E25") = "" Then
+ Range("E25") = "?"
+End If
+If Range("E26") = "" Then
+ Range("E26") = "?"
+End If
+If Range("E27") = "" Then
+ Range("E27") = "?"
+End If
+
+
+End Sub
+
+Sub Reset_Config()
+Dim M
+Dim MSG
+
+MSG = MsgBox("Gostaria de limpar os dados da configuração das simulações?", vbYesNo, "Limpar dados")
+If MSG = vbYes Then
+    
+    
+    Range("C6") = ""
+    Range("E6") = ""
+    Range("C7") = ""
+    Range("C8") = ""
+    Range("C9") = ""
+    Range("C11") = ""
+    Range("C12") = ""
+    Range("C13") = ""
+    Range("C16") = ""
+    Range("E16") = ""
+    Range("G16") = ""
+    Range("C17") = ""
+    Range("E17") = ""
+    Range("G17") = ""
+    Range("C18") = ""
+    Range("E18") = ""
+    Range("G18") = ""
+    
+    Range("C23") = ""
+    Range("C24") = ""
+    Range("C25") = ""
+    Range("C26") = ""
+    Range("C27") = ""
+    
+    Range("E23") = ""
+    Range("E24") = ""
+    Range("E25") = ""
+    Range("E26") = ""
+    Range("E27") = ""
+    
+    M = MsgBox("Gostaria de limpar as coordenadas da queda, velocidade da superficie e direção das correntes?", vbYesNo, "Limpar")
+    If M = vbYes Then
+        Range("C3") = ""
+        Range("C4") = ""
+        Range("C22") = ""
+        Range("E22") = ""
+    End If
+    If M = vbNo Then
+        Exit Sub
+    End If
+End If
+
+If MSG = vbNo Then
+    Exit Sub
+End If
+
+
+End Sub
+
+'-------------------------------------------------------
+
+Sub Gerenciador_de_calculos()
+    
+    Dim T1 As Double
+    Dim T2 As Double
+    Dim T3 As Double
+    
+    Dim VS1 As Double
+    Dim VS2 As Double
+    Dim VS3 As Double
+    
+    Dim VSC1 As Double
+    Dim VSC2 As Double
+    Dim VSC3 As Double
+    
+    Dim Vm As Double
+    Dim RC As Double
+    
+    Dim VMC1 As Double
+    Dim VMC2 As Double
+    Dim VMC3 As Double
+    
+    Dim GamaSC1 As Double
+    Dim GamaSC2 As Double
+    Dim GamaSC3 As Double
+    
+    Dim GamaMC1 As Double
+    Dim GamaMC2 As Double
+    Dim GamaMC3 As Double
+    
+    Dim Lat21 As Double
+    Dim Lon21 As Double
+    Dim Dr1 As Double
+    
+    Dim Lat22 As Double
+    Dim Lon22 As Double
+    Dim Dr2 As Double
+
+    Dim Lat23 As Double
+    Dim Lon23 As Double
+    Dim Dr3 As Double
+    
+    Dim linhas As Double
+    Dim linhasP As Double
+    
+    If Range("C6") = "h" Or Range("C6") = "" Then
+        MsgBox "Altura da aeronave não definida, por favor incira um valor valido.", vbCritical, "Altura não definida"
+        Range("C6").Select
+        Exit Sub
+    End If
+    
+    Obter_o_tempo_de_mergulho 1, Range("C16"), Range("E16"), Range("G16"), T1
+    Obter_o_tempo_de_mergulho 0, Range("C17"), Range("E17"), Range("G17"), T2
+    Obter_o_tempo_de_mergulho 0, Range("C18"), Range("E18"), Range("G18"), T3
+    
+    If T1 <> -2 And T1 <> -1 Then
+        Velocidade_de_mergulho_na_superficie Range("C6"), T1, VS1
+        pitagoras VS1, Range("C22"), VSC1
+        Angulos_de_mergulho -VS1, Range("C22"), GamaSC1
+        ' pode entregar os pontos iniciais T , VSC , GamaSC
+        Range("S4") = T1
+        Range("S5") = VS1
+        Range("S6") = VSC1
+        Range("S7") = GamaSC1
+        
+        Range("R12") = Range("C3")
+        Range("T12") = Range("C4")
+        Range("R14") = -Range("C6")
+        Range("S14") = T1
+        
+        Calculo_trigonometrico_das_coordenadas3 T1, Range("C3"), Range("C4"), VSC1, GamaSC1, Lat21, Lon21, Dr1
+        Range("P14") = Lat21
+        Range("Q14") = Lon21
+        Range("V14") = GamaSC1
+        Range("W14") = Dr1
+        Range("T14") = VSC1
+        Range("U14") = Range("E22")
+        
+    End If
+    If T2 <> -2 Then
+        Velocidade_de_mergulho_na_superficie Range("C6"), T2, VS2
+        pitagoras VS2, Range("C22"), VSC2
+        Angulos_de_mergulho -VS2, Range("C22"), GamaSC2
+        ' pode entregar os pontos iniciais T , VSC , GamaSC
+        Range("S28") = T2
+        Range("S29") = VS2
+        Range("S30") = VSC2
+        Range("S31") = GamaSC2
+        
+        Range("R36") = Range("C3")
+        Range("T36") = Range("C4")
+        Range("R38") = -Range("C6")
+        Range("S38") = T2
+        
+        Calculo_trigonometrico_das_coordenadas3 T2, Range("C3"), Range("C4"), VSC2, GamaSC2, Lat22, Lon22, Dr2
+        Range("P38") = Lat22
+        Range("Q38") = Lon22
+        Range("V38") = GamaSC2
+        Range("W38") = Dr2
+        Range("T38") = VSC2
+        Range("U38") = Range("E22")
+        
+    End If
+    If T3 <> -2 Then
+        Velocidade_de_mergulho_na_superficie Range("C6"), T3, VS3
+        pitagoras VS3, Range("C22"), VSC3
+        Angulos_de_mergulho -VS3, Range("C22"), GamaSC3
+        ' pode entregar os pontos iniciais T , VSC , GamaSC
+        Range("S52") = T3
+        Range("S53") = VS3
+        Range("S54") = VSC3
+        Range("S55") = GamaSC3
+        
+        Range("R60") = Range("C3")
+        Range("T60") = Range("C4")
+        Range("R62") = -Range("C6")
+        Range("S62") = T3
+        
+        Calculo_trigonometrico_das_coordenadas3 T3, Range("C3"), Range("C4"), VSC3, GamaSC3, Lat23, Lon23, Dr3
+        Range("P62") = Lat23
+        Range("Q62") = Lon23
+        Range("V62") = GamaSC3
+        Range("W62") = Dr3
+        Range("T62") = VSC3
+        Range("U62") = Range("E22")
+        
+    End If
+    
+    RC = (((Range("C11")) ^ (2)) + ((Range("C12")) ^ (2)) + ((Range("C13")) ^ (2))) ^ (1 / 2)
+    
+    Vm = ((2 * Range("C7") * Range("C8")) / (Range("C9") * Range("E6") * RC)) ^ (1 / 2)
+    
+    If T1 <> -2 And T1 <> -1 Then
+        
+        Range("S9") = Vm
+        linhas = 15
+        linhasP = 22
+
+        
+        Do Until linhas = 22 Or WorksheetFunction.IsText(Cells(linhasP, 3)) = True
+            
+            If linhasP = 28 Then
+            linhasP = linhasP - 1
+            End If
+            
+            pitagoras Vm, Cells(linhasP, 3), VMC1
+            Angulos_de_mergulho -Vm, Cells(linhasP, 3), GamaMC1
+            
+            Cells(linhas, 20) = VMC1
+            Cells(linhas, 21) = Cells(linhasP, 5)
+            Cells(linhas, 22) = GamaMC1
+            Tempo_de_mergulho_em_profundidade Cells(linhas - 1, 19), -Cells(linhas - 1, 18), -Cells(linhas, 18), T1, VMC1
+            Cells(linhas, 19) = T1
+            
+            Dr1 = (T1 - Cells(linhas - 1, 19)) * VMC1 * Cos(WorksheetFunction.Radians(GamaMC1))
+            
+            Calculo_trigonometrico_das_coordenadas4 Dr1, Cells(linhas - 1, 16), Cells(linhas - 1, 17), VMC1, Cells(linhasP, 5), Lat21, Lon21, 0
+            Cells(linhas, 16) = Lat21
+            Cells(linhas, 17) = Lon21
+            
+            
+            Cells(linhas, 23) = Dr1 * Cos(WorksheetFunction.Radians(Cells(linhas, 21))) / Abs(Cos(WorksheetFunction.Radians(Cells(linhas, 21)))) + Cells(linhas - 1, 23)
+            
+            linhas = linhas + 1
+            linhasP = linhasP + 1
+        Loop
+        
+        
+    End If
+    If T2 <> -2 Then
+        
+        Range("S33") = Vm
+        linhas = 39
+        linhasP = 22
+
+        
+        Do Until linhas = 46 Or WorksheetFunction.IsText(Cells(linhasP, 3)) = True
+            
+            If linhasP = 28 Then
+            linhasP = linhasP - 1
+            End If
+            
+            pitagoras Vm, Cells(linhasP, 3), VMC1
+            Angulos_de_mergulho -Vm, Cells(linhasP, 3), GamaMC1
+            
+            Cells(linhas, 20) = VMC1
+            Cells(linhas, 21) = Cells(linhasP, 5)
+            Cells(linhas, 22) = GamaMC1
+            Tempo_de_mergulho_em_profundidade Cells(linhas - 1, 19), -Cells(linhas - 1, 18), -Cells(linhas, 18), T1, VMC1
+            Cells(linhas, 19) = T1
+            
+            Dr1 = (T1 - Cells(linhas - 1, 19)) * VMC1 * Cos(WorksheetFunction.Radians(GamaMC1))
+            
+            Calculo_trigonometrico_das_coordenadas4 Dr1, Cells(linhas - 1, 16), Cells(linhas - 1, 17), VMC1, Cells(linhasP, 5), Lat21, Lon21, 0
+            Cells(linhas, 16) = Lat21
+            Cells(linhas, 17) = Lon21
+            
+            
+            Cells(linhas, 23) = Dr1 * Cos(WorksheetFunction.Radians(Cells(linhas, 21))) / Abs(Cos(WorksheetFunction.Radians(Cells(linhas, 21)))) + Cells(linhas - 1, 23)
+            
+            linhas = linhas + 1
+            linhasP = linhasP + 1
+        Loop
+        
+    End If
+    If T3 <> -2 Then
+        
+        Range("S9") = Vm
+        linhas = 63
+        linhasP = 22
+
+        
+        Do Until linhas = 70 Or WorksheetFunction.IsText(Cells(linhasP, 3)) = True
+            
+            If linhasP = 28 Then
+            linhasP = linhasP - 1
+            End If
+            
+            pitagoras Vm, Cells(linhasP, 3), VMC1
+            Angulos_de_mergulho -Vm, Cells(linhasP, 3), GamaMC1
+            
+            Cells(linhas, 20) = VMC1
+            Cells(linhas, 21) = Cells(linhasP, 5)
+            Cells(linhas, 22) = GamaMC1
+            Tempo_de_mergulho_em_profundidade Cells(linhas - 1, 19), -Cells(linhas - 1, 18), -Cells(linhas, 18), T1, VMC1
+            Cells(linhas, 19) = T1
+            
+            Dr1 = (T1 - Cells(linhas - 1, 19)) * VMC1 * Cos(WorksheetFunction.Radians(GamaMC1))
+            
+            Calculo_trigonometrico_das_coordenadas4 Dr1, Cells(linhas - 1, 16), Cells(linhas - 1, 17), VMC1, Cells(linhasP, 5), Lat21, Lon21, 0
+            Cells(linhas, 16) = Lat21
+            Cells(linhas, 17) = Lon21
+            
+            
+            Cells(linhas, 23) = Dr1 * Cos(WorksheetFunction.Radians(Cells(linhas, 21))) / Abs(Cos(WorksheetFunction.Radians(Cells(linhas, 21)))) + Cells(linhas - 1, 23)
+            
+            linhas = linhas + 1
+            linhasP = linhasP + 1
+        Loop
+        
+    End If
+    
+End Sub
+
+Sub Obter_o_tempo_de_mergulho(Situacao As Boolean, Thor As Variant, Tmin As Variant, Ts As Variant, t As Variant)
+    
+    If Situacao = True And (WorksheetFunction.IsNumber(Thor) = False And WorksheetFunction.IsNumber(Tmin) = False And WorksheetFunction.IsNumber(Ts) = False) Then
+        MsgBox "Valor X foi detectado na simulação em Stall." & Chr(13) & Chr(13) & "   A simulação não será executada pois o oceano absorveu 100% da energia gerada na queda da aeronave. Portanto, todas as peças da aeronave tornaram-se destroços." & Chr(13) & Chr(13) & "  Por favor adote o (Relatório de deslocamento de destroços) como esta simulação para obter as informações sobre o deslocamento da aeronave." & Chr(13) & Chr(13) & "Vale resaltar que as peças poderam afundar durante todo percurso, em tempos variados.", vbInformation, "Valor X em Stall"
+        t = -1
+        Exit Sub
+    End If
+    If (WorksheetFunction.IsNumber(Thor) = False Or WorksheetFunction.IsNumber(Tmin) = False Or WorksheetFunction.IsNumber(Ts) = False) Then
+        MsgBox "Atenção, texto detectado em campo incorreto. Por favor insirar um valor valido.", vbCritical, "Isto não funciona"
+        t = -2
+        Exit Sub
+    Else
+    
+        t = Thor * 3600 + Tmin * 60 + Ts
+    
+    End If
+End Sub
+
+Sub Velocidade_de_mergulho_na_superficie(Altura As Double, t As Double, V As Double)
+
+    V = Altura / t
+
+End Sub
+Sub Tempo_de_mergulho_em_profundidade(Ti As Double, Di As Double, Df As Double, t As Double, V As Double)
+
+    t = Ti + (Df - Di) / V
+
+End Sub
+Sub Calculo_trigonometrico_das_coordenadas3(t As Double, Lat1 As Double, Lon1 As Double, Vm As Double, Tetam As Double, Lat2 As Double, Lon2 As Double, Dr As Double)
+
+    Drv = t * Vm
+    
+    Dy = Vm * Sin(WorksheetFunction.Radians(Tetam))
+    Dx = Vm * Cos(WorksheetFunction.Radians(Tetam))
+    Lat2 = Lat1 + Dy
+    Lon2 = Lon1 + Dx
+    Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+    Dr = Dr * 1000
+    
+    Correcao = Drv / Dr
+    
+    Dy = Vm * Sin(WorksheetFunction.Radians(Tetam)) * Correcao
+    Dx = Vm * Cos(WorksheetFunction.Radians(Tetam)) * Correcao
+    Lat2 = Lat1 + Dy
+    Lon2 = Lon1 + Dx
+    Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+    Dr = Dr * 1000
+    
+    Erro = 100 - (Dr / Drv * 100)
+
+End Sub
+
+Sub Calculo_trigonometrico_das_coordenadas4(Drv As Double, Lat1 As Double, Lon1 As Double, Vm As Double, Tetam As Double, Lat2 As Double, Lon2 As Double, Dr As Double)
+    
+    Dy = Vm * Sin(WorksheetFunction.Radians(Tetam))
+    Dx = Vm * Cos(WorksheetFunction.Radians(Tetam))
+    Lat2 = Lat1 + Dy
+    Lon2 = Lon1 + Dx
+    Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+    Dr = Dr * 1000
+    
+    Correcao = Drv / Dr
+    
+    Dy = Vm * Sin(WorksheetFunction.Radians(Tetam)) * Correcao
+    Dx = Vm * Cos(WorksheetFunction.Radians(Tetam)) * Correcao
+    Lat2 = Lat1 + Dy
+    Lon2 = Lon1 + Dx
+    Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+    Dr = Dr * 1000
+    
+    Erro = 100 - (Dr / Drv * 100)
+
+End Sub
+
+Sub Angulos_de_mergulho(A As Double, R As Double, Teta As Double)
+If R = 0 Then
+    Teta = 0
+Else
+    Teta = 360 + WorksheetFunction.Degrees(Atn(A / R))
+End If
+End Sub
+
+Sub Reset_Simulacao()
+Dim MSG
+Dim linhas As Double
+Dim Colunas As Double
+Dim i As Integer
+MSG = MsgBox("Gostaria de limpar as simulações?", vbYesNo, "Limpar simulação")
+If MSG = vbYes Then
+    
+    linhas = 4
+    i = 0
+    Do Until i = 6
+        Cells(linhas + i, 19) = ""
+        i = i + 1
+    Loop
+    linhas = linhas + i - 1
+    
+    linhas = linhas + 3
+    Cells(linhas, 18) = ""
+    Cells(linhas, 20) = ""
+    
+    linhas = linhas + 2
+    i = 0
+    Do Until i = 8
+    Colunas = 16
+        Do Until Colunas = 18
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        Colunas = Colunas + 1
+        Do Until Colunas = 24
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        i = i + 1
+    Loop
+    
+    '--------------
+    
+    linhas = 28
+    i = 0
+    Do Until i = 6
+        Cells(linhas + i, 19) = ""
+        i = i + 1
+    Loop
+    linhas = linhas + i - 1
+    
+    linhas = linhas + 3
+    Cells(linhas, 18) = ""
+    Cells(linhas, 20) = ""
+    
+    linhas = linhas + 2
+    i = 0
+    Do Until i = 8
+    Colunas = 16
+        Do Until Colunas = 18
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        Colunas = Colunas + 1
+        Do Until Colunas = 24
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        i = i + 1
+    Loop
+    
+    '--------------
+    
+    linhas = 52
+    i = 0
+    Do Until i = 6
+        Cells(linhas + i, 19) = ""
+        i = i + 1
+    Loop
+    linhas = linhas + i - 1
+    
+    linhas = linhas + 3
+    Cells(linhas, 18) = ""
+    Cells(linhas, 20) = ""
+    
+    linhas = linhas + 2
+    i = 0
+    Do Until i = 8
+    Colunas = 16
+        Do Until Colunas = 18
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        Colunas = Colunas + 1
+        Do Until Colunas = 24
+            Cells(linhas + i, Colunas) = ""
+            Colunas = Colunas + 1
+        Loop
+        i = i + 1
+    Loop
+    
+End If
+If MSG = vbNo Then
+Exit Sub
+End If
+End Sub
