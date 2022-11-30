@@ -1,0 +1,2189 @@
+Sub Funcoes()
+
+    Acessar_Site
+    Pasta_de_dados
+    Extraindo_informacoes
+    Corrigir_dados
+    Limpesa_dos_dados
+    Coordenadas_do_objeto
+    Calculando_a_intencidade_do_volume_de_agua
+    Preparo_do_relatorio
+    Exportar_Como
+    MsgBox "Ação feita com Sucesso", vbInformation, "Completo"
+     
+End Sub
+Sub Acessar_Site()
+ThisWorkbook.Save
+Dim Site_ADS_B As String
+Dim Site_NOAA_1 As String
+Dim Site_NOAA_2 As String
+Dim Navegador As String
+Dim Voo As String
+linha = 3
+Contagem = 1
+Sheets(1).Select
+
+Call SendKeys("{TAB}", True)
+
+    If Cells(linha, 2) = "" Then
+        MsgBox "Digite ao menos 1 Voo", 64, "Excel Informa!"
+        Exit Sub
+    End If
+
+Navegador = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+Site_ADS_B = Cells(linha - 1, 2)
+Site_NOAA_1 = Cells(linha, 3)
+Site_NOAA_2 = Cells(linha + 1, 3)
+Voo = Cells(linha, 2)
+Columns("G:O").Select
+Selection.ClearContents
+
+Shell Navegador & " " & Site_ADS_B & Voo
+
+    Application.Wait (Now + TimeValue("00:00:10"))
+
+
+Call SendKeys("^f", True)
+    Application.Wait (Now + TimeValue("00:00:02"))
+Call SendKeys("{BACKSPACE}", True)
+Call SendKeys("track log", True)
+Call SendKeys("{TAB}", True)
+Call SendKeys("{TAB}", True)
+Call SendKeys("{TAB}", True)
+Call SendKeys("{ENTER}", True)
+    Application.Wait (Now + TimeValue("00:00:02"))
+Call SendKeys("{ESC}", True)
+Call SendKeys("{ENTER}", True)
+    Application.Wait (Now + TimeValue("00:00:05"))
+    
+
+Call SendKeys("{TAB}", True)
+    Call SendKeys("^a", True)
+    Application.Wait (Now + TimeValue("00:00:05"))
+Call SendKeys("^c", True)
+    Application.Wait (Now + TimeValue("00:00:05"))
+
+Cells(2, 7).Select
+            ActiveSheet.PasteSpecial Format:="HTML", Link:=False, DisplayAsIcon:= _
+        False, NoHTMLFormatting:=True
+
+
+Shell Navegador & " " & Site_NOAA_1
+
+    Application.Wait (Now + TimeValue("00:00:15"))
+
+Shell Navegador & " " & Site_NOAA_2
+
+    Application.Wait (Now + TimeValue("00:00:15"))
+
+
+
+Call SendKeys("{NUMLOCK}", True)
+Call SendKeys("{NUMLOCK}", True)
+
+End Sub
+
+Sub Extraindo_informacoes()
+    
+    Call SendKeys("%{TAB}", True)
+    Dim Lado_do_disco_de_dados As Integer
+    
+    Dim Conteudo_do_Arquivo As String
+    Dim Caminho_primario As String
+    Dim Caminho As String
+    Dim Caminho_de_trasferencia As String
+    Dim Jump_de_colunas As Integer
+    
+     Dim Backup As Integer
+    
+    Lado_do_disco_de_dados = 1
+    Backup = 0
+    
+    Jump_de_colunas = 1
+    Sheets(1).Select
+    Caminho_primario = Range("B7") & "\"
+    
+    If Range("C2") = Range("C11") Then
+        Backup = 1
+        Jump_de_colunas = 12
+    End If
+    
+    Dim Planilha_Atual As Workbook
+    Dim Planilha_Externa As Workbook
+    Set Planilha_Atual = ActiveWorkbook
+    
+    Sheets(2).Select
+    Cells.Select
+    Selection.ClearContents
+    
+    Arquivo = Dir(Caminho_primario & "**" & ".txt")
+    
+    
+Do While Len(Arquivo) > 0
+
+
+    Caminho = Caminho_primario & Arquivo
+    Caminho_de_trasferencia = Caminho_primario & "Ocean surface data from NOAA\"
+    
+    
+    
+    Application.Workbooks.Open (Caminho)
+    
+    Set Planilha_Externa = ActiveWorkbook
+    
+    Range("A1").Select
+    Range(Selection, ActiveCell.SpecialCells(xlLastCell)).Select
+    Selection.Copy
+    
+      
+    Planilha_Atual.Activate
+    Cells(1, Jump_de_colunas).Select
+    If Backup = 0 Then
+        Jump_de_colunas = Jump_de_colunas + 11
+    ElseIf Backup = 1 Then
+        Jump_de_colunas = Jump_de_colunas - 11
+    End If
+    ActiveSheet.Paste
+    
+    Planilha_Externa.Activate
+    
+    Application.DisplayAlerts = False
+        
+        ActiveWorkbook.Save
+        ActiveWorkbook.Close savechanges:=False
+        
+    Application.DisplayAlerts = True
+    
+    Range("I1") = "Versão"
+    Range("I2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=CONCATENATE(DAY(TODAY()),""-"",MONTH(TODAY()),""-"",YEAR(TODAY()),"" "",HOUR(NOW()),""h "",MINUTE(NOW()),""min "",SECOND(NOW()),""s"")"
+        
+    Selection.Copy
+    Range("I2").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    
+    
+    If Lado_do_disco_de_dados = 1 Then
+        Name Caminho As Caminho_de_trasferencia & "(Collected Data " & Range("I2") & " side A) " & Arquivo
+    Else
+        Name Caminho As Caminho_de_trasferencia & "(Collected Data " & Range("I2") & " side B) " & Arquivo
+    End If
+    
+    Lado_do_disco_de_dados = -Lado_do_disco_de_dados
+    
+    Arquivo = Dir
+Loop
+
+ End Sub
+ 
+
+Sub Pasta_de_dados()
+
+    On Error GoTo trata_erro
+
+Dim Sistema_Windowns, Nova_Pasta
+    Set Sistema_Windowns = CreateObject("Scripting.fileSystemObject")
+    Set Nova_Pasta = Sistema_Windowns.CreateFolder(Range("B7") & "\" & "Ocean surface data from NOAA")
+
+CreateFolderDemo = Nova_Pasta.Path
+
+    
+    Exit Sub
+
+trata_erro:
+
+    If Err.Number = 53 Then
+        MsgBox "O arquivo " & Range("B7") & "\" & "Ocean surface data from NOAA" & " não foi localizado"
+        
+    ElseIf Err.Number = 58 Then
+        Exit Sub
+        
+    Else
+        MsgBox "ocorreu o erro : " & Err.Number & "-" & Err.Description
+        
+    End If
+
+End Sub
+Sub Pasta_de_Relatorios()
+
+    On Error GoTo trata_erro
+
+Dim Sistema_Windowns, Nova_Pasta
+    Set Sistema_Windowns = CreateObject("Scripting.fileSystemObject")
+    
+    Sheets(1).Select
+    Set Nova_Pasta = Sistema_Windowns.CreateFolder(Range("B7") & "\" & "Relatorios")
+    Sheets(3).Select
+CreateFolderDemo = Nova_Pasta.Path
+
+    
+    Exit Sub
+
+trata_erro:
+
+7    If Err.Number = 53 Then
+        MsgBox "O arquivo " & Range("B7") & "\" & "Reloatorios" & " não foi localizado"
+        
+    ElseIf Err.Number = 58 Then
+        Exit Sub
+        
+    Else
+        MsgBox "ocorreu o erro : " & Err.Number & "-" & Err.Description
+        
+    End If
+
+End Sub
+Sub Corrigir_dados()
+    
+    Dim linhas As Integer
+    Dim delet_linhas As Integer
+    Dim inicio As Integer
+    Dim fim As Integer
+    
+    Dim Hora As String
+    Dim Data As String
+    Dim Lat As Double
+    Dim Lon As Double
+    
+    linhas = 1
+    delet_linhas = 0
+    Sheets(1).Select
+    
+    Do Until Cells(linhas, 8) = "Latitude"
+    linhas = linhas + 1
+    Loop
+    
+    'achou a latitude, beleza
+    
+    linhas = linhas + 1
+    Do Until Cells(linhas, 8) <> ""
+    linhas = linhas + 1
+    Loop
+    
+    'achou o inicio da linha, beleza 2
+    
+        inicio = linhas
+    
+    Do Until Cells(linhas, 8) = ""
+    If (Cells(linhas + 1, 8) = "") Then
+        If (Cells(linhas + 2, 8) <> "") Then
+            linhas = linhas + 1
+        End If
+    End If
+    If (Cells(linhas + 1, 8) = "Recebendo dados em tempo real, por favor, aguarde…") Then
+        delet_linhas = delet_linhas + 1
+    End If
+    linhas = linhas + 1
+    Loop
+    
+    'achou o fim das linhas, beleza 3
+    
+    fim = linhas - delet_linhas
+    linhas = inicio
+    
+    Do Until fim = linhas
+    If (Cells(linhas, 8) <> "" And Cells(linhas, 8) <> "Recebendo dados em tempo real, por favor, aguarde…") Then
+    
+        Cells(linhas, 8) = Cells(linhas, 8) / 10000
+        Cells(linhas, 8).NumberFormat = "#,##0.00"
+        Cells(linhas, 9) = Cells(linhas, 9) / 10000
+        Cells(linhas, 9).NumberFormat = "#,##0.00"
+    
+    End If
+    
+    linhas = linhas + 1
+    Loop
+    
+    'extraindo data, latitude e longitude (vai passar para a outra sub)
+    
+    linhas = fim
+    Do Until Cells(linhas, 9) <> ""
+    linhas = linhas - 1
+    Loop
+    
+    
+    Hora = Cells(linhas, 7)
+    Lat = Cells(linhas, 8)
+    Lon = Cells(linhas, 9)
+    
+    
+    
+    linhas = 1
+    Range("F2").Select
+    Range("F2") = ""
+    
+    Do Until WorksheetFunction.IsNumber(Range("F2"))
+    ActiveCell.FormulaR1C1 = "=IFERROR(SEARCH(CONCATENATE(""? "",R3C2),R[" & (linhas - 1) & "]C[1],1),FALSE)"
+    linhas = linhas + 1
+    Loop
+    
+    
+    Data = Cells(linhas, 7)
+    Range("F2") = ""
+    
+    Sheets(3).Select
+    
+    Range("B2") = Data
+    Range("B3") = Hora
+    Range("D3") = Lat
+    Range("F3") = Lon
+    
+End Sub
+Sub Limpesa_dos_dados()
+
+Range("C2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=MID(RC[-1],SEARCH("" "",RC[-1],7),SEARCH(""("",RC[-1],7)-SEARCH("" "",RC[-1],7))"
+        
+        Selection.Copy
+    Range("B4").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+        
+    Range("D2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=CONCATENATE(MID(RC[-2],SEARCH("" "",RC[-2],5),SEARCH("" "",RC[-2],7)-SEARCH("" "",RC[-2],5)),"" "",MID(RC[-2],SEARCH(""("",RC[-2],1),1+SEARCH("")"",RC[-2],1)-SEARCH(""("",RC[-2],1)))"
+    
+    Selection.Copy
+    Range("B2").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    
+    Range("D2") = ""
+    Range("C2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=DATEVALUE(CONCATENATE(MID(TRIM(R[2]C[-1]),1,2),""/"",TRIM(MID(TRIM(R[2]C[-1]),SEARCH(""de"",R[2]C[-1],1)+1,5)),""/"",TRIM(MID(TRIM(R[2]C[-1]),SEARCH(""de"",R[2]C[-1],SEARCH(""de"",R[2]C[-1],1)+1)+1,5))))"
+    Selection.Copy
+    Range("B4").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    
+    Range("C2") = ""
+    
+        Range("B4").Select
+    Selection.NumberFormat = "m/d/yyyy"
+    With Selection
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+
+End Sub
+Sub Coordenadas_do_objeto()
+
+    'Rastreamento das coordenadas
+    
+    Dim Lat As Double
+    Dim Lon As Double
+    
+    Dim X1 As Double
+    Dim X2 As Double
+    Dim XC As Double
+    Dim Y1 As Double
+    Dim Y2 As Double
+    Dim YC As Double
+       
+    Dim P0 As String
+    Dim P1 As String
+    Dim P2 As String
+    Dim P3 As String
+    Dim P4 As String
+    
+    Dim VL1 As Double
+    Dim VL2 As Double
+    Dim VL3 As Double
+    Dim VL4 As Double
+    
+    Dim VN1 As Double
+    Dim VN2 As Double
+    Dim VN3 As Double
+    Dim VN4 As Double
+    
+    
+    Dim inicio1 As Integer
+    Dim inicio2 As Integer
+    
+    Dim linhas1 As Double
+    Dim linhas2 As Double
+    
+    Dim linhas_Invertida1 As Double
+    Dim linhas_Invertida2 As Double
+    
+    Dim achouLat As Integer
+    Dim achouLon As Integer
+
+        Sheets(1).Select
+        If Range("C2") = Range("C11") Then
+            Coordenadas_do_objeto_backup
+            Exit Sub
+        End If
+        Sheets(3).Select
+        
+    Lat = Range("D3")
+    Lon = Range("F3")
+    P0 = "P0 (" & Lat & ", " & Lon & ") "
+    linhas1 = 1
+    linhas2 = 1
+    achouLat = 0
+    achouLon = 0
+    Y1 = 720
+    Y2 = 720
+    X1 = 720
+    X2 = 720
+    
+    Longitude_Sem_enrolacao X1, X2
+    
+        Sheets(2).Select
+    
+    Do Until Cells(linhas1, 1) = "*"
+    linhas1 = linhas1 + 1
+    Loop
+    Do Until Cells(linhas2, 12) = "*"
+    linhas2 = linhas2 + 1
+    Loop
+    
+    
+    'latitude
+    
+    inicio1 = linhas1
+    inicio2 = linhas2
+    
+       
+    Do Until Lat <= Cells(linhas1, 5) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Lat <= Cells(linhas1, 5) And Cells(linhas1, 1) = "*" Then
+        Y1 = Cells(linhas1, 5)
+        linhas_Invertida1 = linhas1
+        
+    End If
+    
+    
+    Do Until Lat >= Cells(linhas1, 5) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Lat >= Cells(linhas1, 5) And Cells(linhas1, 1) = "*" Then
+        Y2 = Cells(linhas1, 5)
+        linhas_Invertida1 = linhas1
+        
+    End If
+    
+    If Y2 <> 720 And Y1 <> 720 Then
+    achouLat = 1
+    End If
+    
+
+    If achouLat <> 1 Then
+        
+        Do Until Lat <= Cells(linhas2, 16) Or Cells(linhas2, 12) = ""
+            linhas2 = linhas2 + 1
+        Loop
+        If Lat <= Cells(linhas2, 16) And Cells(linhas2, 12) = "*" Then
+            If Y1 = 720 Then
+                Y1 = Cells(linhas2, 16)
+                linhas_Invertida2 = linhas2
+                
+            End If
+        End If
+        
+        
+        Do Until Lat >= Cells(linhas2, 16) Or Cells(linhas2, 12) = ""
+            linhas2 = linhas2 + 1
+        Loop
+        If Lat >= Cells(linhas2, 16) And Cells(linhas2, 12) = "*" Then
+            If Y2 = 720 Then
+                Y2 = Cells(linhas2, 16)
+                linhas_Invertida2 = linhas2
+
+                
+            End If
+        End If
+        
+        If Y2 <> 720 And Y1 <> 720 Then
+        achouLat = 1
+        End If
+        
+    End If
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    
+        If achouLat <> 1 Then 'esta invertido
+        
+            If linhas_Invertida1 <> 0 Then
+                Do Until Lat >= Cells(linhas_Invertida1, 5) Or Cells(linhas_Invertida1, 1) = inicio1 + 1
+                    linhas_Invertida1 = linhas_Invertida1 - 1
+                Loop
+                If Lat >= Cells(linhas_Invertida1, 5) And Cells(linhas_Invertida1, 1) = "*" Then
+                    If Y2 = 720 Then
+                        Y2 = Cells(linhas_Invertida1, 5)
+
+                        
+                    End If
+                End If
+                
+                
+                Do Until Lat <= Cells(linhas_Invertida1, 5) Or Cells(linhas_Invertida1, 1) = inicio1 + 1
+                    linhas_Invertida1 = linhas_Invertida1 - 1
+                Loop
+                If Lat <= Cells(linhas_Invertida1, 5) And Cells(linhas_Invertida1, 1) = "*" Then
+                    If Y1 = 720 Then
+                        Y1 = Cells(linhas_Invertida1, 5)
+
+                        
+                    End If
+                End If
+                
+                If Y2 <> 720 And Y1 <> 720 Then
+                achouLat = 1
+                End If
+            End If
+            If linhas_Invertida2 <> 0 Then
+                If achouLat <> 1 Then
+                    
+                    Do Until Lat >= Cells(linhas_Invertida2, 16) Or Cells(linhas_Invertida2, 12) = inicio1 + 1
+                        linhas_Invertida2 = linhas_Invertida2 - 1
+                    Loop
+                    If Lat >= Cells(linhas_Invertida2, 16) And Cells(linhas_Invertida2, 12) = "*" Then
+                        If Y2 = 720 Then
+                            Y2 = Cells(linhas_Invertida2, 16)
+                            
+                        End If
+                    End If
+                    
+                    
+                    Do Until Lat <= Cells(linhas_Invertida2, 16) Or Cells(linhas_Invertida2, 12) = inicio1 + 1
+                        linhas_Invertida2 = linhas_Invertida2 - 1
+                    Loop
+                    If Lat <= Cells(linhas_Invertida2, 16) And Cells(linhas_Invertida2, 12) = "*" Then
+                        If Y1 = 720 Then
+                            Y1 = Cells(linhas_Invertida2, 16)
+
+                            
+                        End If
+                    End If
+                    
+                    If Y2 <> 720 And Y1 <> 720 Then
+                    achouLat = 1
+                    End If
+                    
+                End If
+            End If
+        End If
+    
+' Coletando os dados finais
+    linhas1 = inicio1
+    linhas2 = inicio2
+    
+    If Y1 < 0 Or Y2 < 0 Then
+        If Y1 < Y2 Then
+            YC = Y2
+            Y2 = Y1
+            Y1 = YC
+        End If
+    Else
+        If Y1 > Y2 Then
+            YC = Y2
+            Y2 = Y1
+            Y1 = YC
+        End If
+    End If
+    If X1 > 0 Or X2 > 0 Then
+        If X1 > X2 Then
+            XC = X2
+            X2 = X1
+            X1 = XC
+        End If
+    Else
+        If X1 < X2 Then
+            XC = X2
+            X2 = X1
+            X1 = XC
+        End If
+    End If
+    
+    
+    Do Until Y1 = Cells(linhas1, 5) And X1 = Cells(linhas1, 5) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y1 = Cells(linhas1, 5) And X1 = Cells(linhas1, 5) Then
+        VL1 = Cells(linhas1, 7)
+        VN1 = Cells(linhas1, 8)
+    End If
+    Do Until Y1 = Cells(linhas2, 16) And X1 = Cells(linhas2, 17) Or Cells(linhas2, 12) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y1 = Cells(linhas2, 16) And X1 = Cells(linhas2, 17) Then
+        VL1 = Cells(linhas2, 18)
+        VN1 = Cells(linhas2, 19)
+    End If
+    
+    
+    P1 = "P1 (" & Y1 & ", " & (X1) & ") "
+    'p1(y1,x1)
+    
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y1 = Cells(linhas1, 5) And X2 = Cells(linhas1, 6) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y1 = Cells(linhas1, 5) And X2 = Cells(linhas1, 6) Then
+        VL2 = Cells(linhas1, 7)
+        VN2 = Cells(linhas1, 8)
+    End If
+    Do Until Y1 = Cells(linhas2, 16) And X2 = Cells(linhas2, 17) Or Cells(linhas2, 12) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y1 = Cells(linhas2, 16) And X2 = Cells(linhas2, 17) Then
+        VL2 = Cells(linhas2, 18)
+        VN2 = Cells(linhas2, 19)
+    End If
+    P2 = "P2 (" & Y1 & ", " & (X2) & ") "
+    'p2(y1,x2)
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y2 = Cells(linhas1, 5) And X1 = Cells(linhas1, 6) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y2 = Cells(linhas1, 5) And X1 = Cells(linhas1, 6) Then
+        VL3 = Cells(linhas1, 7)
+        VN3 = Cells(linhas1, 8)
+    End If
+    Do Until Y2 = Cells(linhas2, 16) And X1 = Cells(linhas2, 17) Or Cells(linhas2, 12) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y2 = Cells(linhas2, 16) And X1 = Cells(linhas2, 17) Then
+        VL3 = Cells(linhas2, 18)
+        VN3 = Cells(linhas2, 19)
+    End If
+    P3 = "P3 (" & Y2 & ", " & (X1) & ") "
+    'p3(y2,x1)
+
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y2 = Cells(linhas1, 5) And X2 = Cells(linhas1, 6) Or Cells(linhas1, 1) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y2 = Cells(linhas1, 5) And X2 = Cells(linhas1, 6) Then
+        VL4 = Cells(linhas1, 7)
+        VN4 = Cells(linhas1, 8)
+    End If
+    Do Until Y2 = Cells(linhas2, 16) And X2 = Cells(linhas2, 17) Or Cells(linhas2, 12) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y2 = Cells(linhas2, 16) And X2 = Cells(linhas2, 17) Then
+        VL4 = Cells(linhas2, 18)
+        VN4 = Cells(linhas2, 19)
+    End If
+    P4 = "P4 (" & Y2 & ", " & (X2) & ") "
+    'p4(y2,x2)
+
+    Sheets(3).Select
+
+    
+    Range("C5") = "Y1"
+    Range("D5") = "X1"
+    Range("E5") = "Y2"
+    Range("F5") = "X2"
+    
+    Range("C6") = Y1
+    Range("D6") = X1
+    Range("E6") = Y2
+    Range("F6") = X2
+
+    Range("C8") = P0
+    Range("E8") = "VL"
+    Range("F8") = "VN"
+    
+    Range("C9") = P1
+    Range("E9") = VL1
+    Range("F9") = VN1
+    
+    Range("C10") = P2
+    Range("E10") = VL2
+    Range("F10") = VN2
+    
+    Range("C11") = P3
+    Range("E11") = VL3
+    Range("F11") = VN3
+    
+    Range("C12") = P4
+    Range("E12") = VL4
+    Range("F12") = VN4
+    
+End Sub
+Sub Coordenadas_do_objeto_backup()
+
+    'Rastreamento das coordenadas
+    
+    Dim Lat As Double
+    Dim Lon As Double
+    
+    Dim X1 As Double
+    Dim X2 As Double
+    Dim XC As Double
+    Dim Y1 As Double
+    Dim Y2 As Double
+    Dim YC As Double
+       
+    Dim P0 As String
+    Dim P1 As String
+    Dim P2 As String
+    Dim P3 As String
+    Dim P4 As String
+    
+    Dim VL1 As Double
+    Dim VL2 As Double
+    Dim VL3 As Double
+    Dim VL4 As Double
+    
+    Dim VN1 As Double
+    Dim VN2 As Double
+    Dim VN3 As Double
+    Dim VN4 As Double
+    
+    
+    Dim inicio1 As Integer
+    Dim inicio2 As Integer
+    
+    Dim linhas1 As Double
+    Dim linhas2 As Double
+    
+    Dim linhas_Invertida1 As Double
+    Dim linhas_Invertida2 As Double
+    
+    Dim achouLat As Integer
+    Dim achouLon As Integer
+    
+    Sheets(3).Select
+    
+    Lat = Range("D3")
+    Lon = Range("F3")
+    P0 = "P0 (" & Lat & ", " & Lon & ") "
+    linhas1 = 1
+    linhas2 = 1
+    achouLat = 0
+    achouLon = 0
+    Y1 = 720
+    Y2 = 720
+    X1 = 720
+    X2 = 720
+    
+    Longitude_Sem_enrolacao X1, X2
+    
+    X1 = X1 + 180
+    X2 = X2 + 180
+    
+    Sheets(2).Select
+    
+    Do Until Cells(linhas1, 3) = "*"
+    linhas1 = linhas1 + 1
+    Loop
+    Do Until Cells(linhas2, 14) = "*"
+    linhas2 = linhas2 + 1
+    Loop
+    
+    
+    'latitude
+    
+    inicio1 = linhas1
+    inicio2 = linhas2
+    
+       
+    Do Until Lat <= Cells(linhas1, 6) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Lat <= Cells(linhas1, 6) And Cells(linhas1, 3) = "*" Then
+        Y1 = Cells(linhas1, 6)
+        linhas_Invertida1 = linhas1
+        
+    End If
+    
+    
+    Do Until Lat >= Cells(linhas1, 6) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Lat >= Cells(linhas1, 6) And Cells(linhas1, 3) = "*" Then
+        Y2 = Cells(linhas1, 6)
+        linhas_Invertida1 = linhas1
+        
+    End If
+    
+    If Y2 <> 720 And Y1 <> 720 Then
+    achouLat = 1
+    End If
+    
+
+    If achouLat <> 1 Then
+        
+        Do Until Lat <= Cells(linhas2, 17) Or Cells(linhas2, 14) = ""
+            linhas2 = linhas2 + 1
+        Loop
+        If Lat <= Cells(linhas2, 17) And Cells(linhas2, 14) = "*" Then
+            If Y1 = 720 Then
+                Y1 = Cells(linhas2, 17)
+                linhas_Invertida2 = linhas2
+                
+            End If
+        End If
+        
+        
+        Do Until Lat >= Cells(linhas2, 17) Or Cells(linhas2, 14) = ""
+            linhas2 = linhas2 + 1
+        Loop
+        If Lat >= Cells(linhas2, 17) And Cells(linhas2, 14) = "*" Then
+            If Y2 = 720 Then
+                Y2 = Cells(linhas2, 17)
+                linhas_Invertida2 = linhas2
+
+                
+            End If
+        End If
+        
+        If Y2 <> 720 And Y1 <> 720 Then
+        achouLat = 1
+        End If
+        
+    End If
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    
+        If achouLat <> 1 Then 'esta invertido
+        
+            If linhas_Invertida1 <> 0 Then
+                Do Until Lat >= Cells(linhas_Invertida1, 6) Or Cells(linhas_Invertida1, 3) = inicio1 + 1
+                    linhas_Invertida1 = linhas_Invertida1 - 1
+                Loop
+                If Lat >= Cells(linhas_Invertida1, 6) And Cells(linhas_Invertida1, 3) = "*" Then
+                    If Y2 = 720 Then
+                        Y2 = Cells(linhas_Invertida1, 6)
+
+                        
+                    End If
+                End If
+                
+                
+                Do Until Lat <= Cells(linhas_Invertida1, 6) Or Cells(linhas_Invertida1, 3) = inicio1 + 1
+                    linhas_Invertida1 = linhas_Invertida1 - 1
+                Loop
+                If Lat <= Cells(linhas_Invertida1, 6) And Cells(linhas_Invertida1, 3) = "*" Then
+                    If Y1 = 720 Then
+                        Y1 = Cells(linhas_Invertida1, 6)
+
+                        
+                    End If
+                End If
+                
+                If Y2 <> 720 And Y1 <> 720 Then
+                achouLat = 1
+                End If
+            End If
+            If linhas_Invertida2 <> 0 Then
+                If achouLat <> 1 Then
+                    
+                    Do Until Lat >= Cells(linhas_Invertida2, 17) Or Cells(linhas_Invertida2, 14) = inicio1 + 1
+                        linhas_Invertida2 = linhas_Invertida2 - 1
+                    Loop
+                    If Lat >= Cells(linhas_Invertida2, 17) And Cells(linhas_Invertida2, 14) = "*" Then
+                        If Y2 = 720 Then
+                            Y2 = Cells(linhas_Invertida2, 17)
+                            
+                        End If
+                    End If
+                    
+                    
+                    Do Until Lat <= Cells(linhas_Invertida2, 17) Or Cells(linhas_Invertida2, 14) = inicio1 + 1
+                        linhas_Invertida2 = linhas_Invertida2 - 1
+                    Loop
+                    If Lat <= Cells(linhas_Invertida2, 17) And Cells(linhas_Invertida2, 14) = "*" Then
+                        If Y1 = 720 Then
+                            Y1 = Cells(linhas_Invertida2, 17)
+
+                            
+                        End If
+                    End If
+                    
+                    If Y2 <> 720 And Y1 <> 720 Then
+                    achouLat = 1
+                    End If
+                    
+                End If
+            End If
+        End If
+    
+' Coletando os dados finais
+    linhas1 = inicio1
+    linhas2 = inicio2
+    
+    If Y1 < 0 Or Y2 < 0 Then
+        If Y1 < Y2 Then
+            YC = Y2
+            Y2 = Y1
+            Y1 = YC
+        End If
+    Else
+        If Y1 > Y2 Then
+            YC = Y2
+            Y2 = Y1
+            Y1 = YC
+        End If
+    End If
+    If X1 > 0 Or X2 > 0 Then
+        If X1 > X2 Then
+            XC = X2
+            X2 = X1
+            X1 = XC
+        End If
+    Else
+        If X1 < X2 Then
+            XC = X2
+            X2 = X1
+            X1 = XC
+        End If
+    End If
+
+    Do Until Y1 = Cells(linhas1, 6) And X1 = Cells(linhas1, 5) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y1 = Cells(linhas1, 6) And X1 = Cells(linhas1, 5) Then
+        VL1 = Cells(linhas1, 8)
+        VN1 = Cells(linhas1, 9)
+    End If
+    Do Until Y1 = Cells(linhas2, 17) And X1 = Cells(linhas2, 16) Or Cells(linhas2, 14) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y1 = Cells(linhas2, 17) And X1 = Cells(linhas2, 16) Then
+        VL1 = Cells(linhas2, 19)
+        VN1 = Cells(linhas2, 20)
+    End If
+    
+    
+    P1 = "P1 (" & Y1 & ", " & (X1 - 180) & ") "
+    'p1(y1,x1)
+    
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y1 = Cells(linhas1, 6) And X2 = Cells(linhas1, 5) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y1 = Cells(linhas1, 6) And X2 = Cells(linhas1, 5) Then
+        VL2 = Cells(linhas1, 8)
+        VN2 = Cells(linhas1, 9)
+    End If
+    Do Until Y1 = Cells(linhas2, 17) And X2 = Cells(linhas2, 16) Or Cells(linhas2, 14) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y1 = Cells(linhas2, 17) And X2 = Cells(linhas2, 16) Then
+        VL2 = Cells(linhas2, 19)
+        VN2 = Cells(linhas2, 20)
+    End If
+    P2 = "P2 (" & Y1 & ", " & (X2 - 180) & ") "
+    'p2(y1,x2)
+    
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y2 = Cells(linhas1, 6) And X1 = Cells(linhas1, 5) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y2 = Cells(linhas1, 6) And X1 = Cells(linhas1, 5) Then
+        VL3 = Cells(linhas1, 8)
+        VN3 = Cells(linhas1, 9)
+    End If
+    Do Until Y2 = Cells(linhas2, 17) And X1 = Cells(linhas2, 16) Or Cells(linhas2, 14) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y2 = Cells(linhas2, 17) And X1 = Cells(linhas2, 16) Then
+        VL3 = Cells(linhas2, 19)
+        VN3 = Cells(linhas2, 20)
+    End If
+    P3 = "P3 (" & Y2 & ", " & (X1 - 180) & ") "
+    'p3(y2,x1)
+
+    linhas1 = inicio1
+    linhas2 = inicio2
+    Do Until Y2 = Cells(linhas1, 6) And X2 = Cells(linhas1, 5) Or Cells(linhas1, 3) = ""
+        linhas1 = linhas1 + 1
+    Loop
+    If Y2 = Cells(linhas1, 6) And X2 = Cells(linhas1, 5) Then
+        VL4 = Cells(linhas1, 8)
+        VN4 = Cells(linhas1, 9)
+    End If
+    Do Until Y2 = Cells(linhas2, 17) And X2 = Cells(linhas2, 16) Or Cells(linhas2, 14) = ""
+    linhas2 = linhas2 + 1
+    Loop
+    If Y2 = Cells(linhas2, 17) And X2 = Cells(linhas2, 16) Then
+        VL4 = Cells(linhas2, 19)
+        VN4 = Cells(linhas2, 20)
+    End If
+    P4 = "P4 (" & Y2 & ", " & (X2 - 180) & ") "
+    'p4(y2,x2)
+
+    Sheets(3).Select
+    
+    Range("C5") = "Y1"
+    Range("D5") = "X1"
+    Range("E5") = "Y2"
+    Range("F5") = "X2"
+    
+    Range("C6") = Y1
+    Range("D6") = X1 - 180
+    Range("E6") = Y2
+    Range("F6") = X2 - 180
+
+    Range("C8") = P0
+    Range("E8") = "VL"
+    Range("F8") = "VN"
+    
+    Range("C9") = P1
+    Range("E9") = VL1
+    Range("F9") = VN1
+    
+    Range("C10") = P2
+    Range("E10") = VL2
+    Range("F10") = VN2
+    
+    Range("C11") = P3
+    Range("E11") = VL3
+    Range("F11") = VN3
+    
+    Range("C12") = P4
+    Range("E12") = VL4
+    Range("F12") = VN4
+    
+End Sub
+
+Sub Longitude_Sem_enrolacao(X1 As Double, X2 As Double)
+
+    Sheets(3).Select
+    Range("G1").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))-1+0.9)*R3C6/ABS(R3C6)"
+    Range("G2").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+0.1)*R3C6/ABS(R3C6)"
+    Range("G3").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+0.3)*R3C6/ABS(R3C6)"
+    Range("G4").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+0.5)*R3C6/ABS(R3C6)"
+    Range("G5").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+0.7)*R3C6/ABS(R3C6)"
+    Range("G6").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+0.9)*R3C6/ABS(R3C6)"
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = "=((ABS(R3C6)-MOD(ABS(R3C6),1))+1.1)*R3C6/ABS(R3C6)"
+    Range("H1").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H2").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H3").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H4").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H5").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H6").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(RC[-1]<R3C6,R[1]C[-1]>R3C6),RC[-1],0),IF(AND(RC[-1]>R3C6,R[1]C[-1]<R3C6),RC[-1],0))"
+    Range("H8").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUM(R[-7]C:R[-2]C)"
+    Range("I2").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I3").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I4").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I5").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I6").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I7").Select
+    ActiveCell.FormulaR1C1 = "=IF(R3C6>0,IF(AND(R[-1]C[-2]<R3C6,RC[-2]>R3C6),RC[-2],0),IF(AND(R[-1]C[-2]>R3C6,RC[-2]<R3C6),RC[-2],0))"
+    Range("I8").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUM(R[-6]C:R[-1]C)"
+    X1 = Range("H8")
+    X2 = Range("I8")
+    
+    Range("G1:I8") = ""
+    Sheets(2).Select
+    
+End Sub
+Sub Calculando_a_intencidade_do_volume_de_agua()
+
+    Dim P1 As String
+    Dim P2 As String
+    Dim P3 As String
+    Dim P4 As String
+    
+    Dim VL1 As Double
+    Dim VL2 As Double
+    Dim VL3 As Double
+    Dim VL4 As Double
+    
+    Dim VN1 As Double
+    Dim VN2 As Double
+    Dim VN3 As Double
+    Dim VN4 As Double
+
+    Dim R1 As Double
+    Dim R2 As Double
+    Dim R3 As Double
+    Dim R4 As Double
+
+    Dim Teta1 As Double
+    Dim Teta2 As Double
+    Dim Teta3 As Double
+    Dim Teta4 As Double
+    
+    Dim Vm As Double
+    Dim Tetam As Double
+    
+    Dim linhas As Double
+    linhas = 9
+    P1 = Cells(linhas, 3)
+    
+    VL1 = Cells(linhas, 5)
+    VN1 = Cells(linhas, 6)
+    
+    linhas = linhas + 1
+    
+    P2 = Cells(linhas, 3)
+    VL2 = Cells(linhas, 5)
+    VN2 = Cells(linhas, 6)
+    
+    linhas = linhas + 1
+    
+    P3 = Cells(linhas, 3)
+    VL3 = Cells(linhas, 5)
+    VN3 = Cells(linhas, 6)
+    
+    linhas = linhas + 1
+    
+    P4 = Cells(linhas, 3)
+    VL4 = Cells(linhas, 5)
+    VN4 = Cells(linhas, 6)
+
+    pitagoras VL1, VN1, R1
+    Angulos VL1, R1, Teta1
+
+    pitagoras VL2, VN2, R2
+    Angulos VL2, R2, Teta2
+
+    pitagoras VL3, VN3, R3
+    Angulos VL3, R3, Teta3
+
+    pitagoras VL4, VN4, R4
+    Angulos VL4, R4, Teta4
+
+    linhas = linhas + 2
+    
+    Cells(linhas, 3) = "P()"
+    Cells(linhas, 5) = "R (m/s)"
+    Cells(linhas, 6) = "Teta (°)"
+    
+    linhas = linhas + 1
+    
+    Cells(linhas, 3) = P1
+    Cells(linhas, 5) = R1
+    Cells(linhas, 6) = Teta1
+    
+    linhas = linhas + 1
+    
+    Cells(linhas, 3) = P2
+    Cells(linhas, 5) = R2
+    Cells(linhas, 6) = Teta2
+    
+    linhas = linhas + 1
+    
+    Cells(linhas, 3) = P3
+    Cells(linhas, 5) = R3
+    Cells(linhas, 6) = Teta3
+    
+    linhas = linhas + 1
+    
+    Cells(linhas, 3) = P4
+    Cells(linhas, 5) = R4
+    Cells(linhas, 6) = Teta4
+    
+    'sistema de peso/porcentagem para melhorar a prcisão da velocidde e direção
+    
+    Calculo_de_distancia_de_vetores Range("C8"), P1, P2, P3, P4, R1, R2, R3, R4, Vm, Teta1, Teta2, Teta3, Teta4, Tetam
+    
+    linhas = linhas + 2
+    
+    Cells(linhas, 5) = "Vm (m/s)"
+    Cells(linhas, 6) = "Tetam (°)"
+    
+    linhas = linhas + 1
+    
+    Cells(linhas, 3) = "Pm() ="
+    Cells(linhas, 5) = Vm
+    Cells(linhas, 6) = Tetam
+    
+
+End Sub
+Sub Calculo_de_distancia_de_vetores(P0 As String, P1 As String, P2 As String, P3 As String, P4 As String, V1 As Double, V2 As Double, V3 As Double, V4 As Double, Vm As Double, Teta1 As Double, Teta2 As Double, Teta3 As Double, Teta4 As Double, Tetam As Double)
+    Dim X0 As Double
+    Dim X1 As Double
+    Dim X2 As Double
+    Dim X3 As Double
+    Dim X4 As Double
+    
+    Dim Y0 As Double
+    Dim Y1 As Double
+    Dim Y2 As Double
+    Dim Y3 As Double
+    Dim Y4 As Double
+    
+    Dim D1 As Double
+    Dim D2 As Double
+    Dim D3 As Double
+    Dim D4 As Double
+    
+    Dim Vmx As Double
+    Dim Vmy As Double
+    
+    Extrair_pontos P0, Y0, X0
+    Extrair_pontos P1, Y1, X1
+    Extrair_pontos P2, Y2, X2
+    Extrair_pontos P3, Y3, X3
+    Extrair_pontos P4, Y4, X4
+    
+    D1 = (((X1 - X0) ^ (2)) + ((Y1 - Y0) ^ (2))) ^ (1 / 2)
+    D2 = (((X2 - X0) ^ (2)) + ((Y2 - Y0) ^ (2))) ^ (1 / 2)
+    D3 = (((X3 - X0) ^ (2)) + ((Y3 - Y0) ^ (2))) ^ (1 / 2)
+    D4 = (((X4 - X0) ^ (2)) + ((Y4 - Y0) ^ (2))) ^ (1 / 2)
+    
+    If D1 >= 0.199 Then
+        D1 = 0.2
+    End If
+    If D2 >= 0.199 Then
+        D2 = 0.2
+    End If
+    If D3 >= 0.199 Then
+        D3 = 0.2
+    End If
+    If D4 >= 0.199 Then
+        D4 = 0.2
+    End If
+    
+    Vmx = V1 * ((0.2 - D1) / 0.2) * Cos(WorksheetFunction.Radians(Teta1)) + V2 * ((0.2 - D2) / 0.2) * Cos(WorksheetFunction.Radians(Teta2)) + V3 * ((0.2 - D3) / 0.2) * Cos(WorksheetFunction.Radians(Teta3)) + V4 * ((0.2 - D4) / 0.2) * Cos(WorksheetFunction.Radians(Teta4))
+    Vmy = V1 * ((0.2 - D1) / 0.2) * Sin(WorksheetFunction.Radians(Teta1)) + V2 * ((0.2 - D2) / 0.2) * Sin(WorksheetFunction.Radians(Teta2)) + V3 * ((0.2 - D3) / 0.2) * Sin(WorksheetFunction.Radians(Teta3)) + V4 * ((0.2 - D4) / 0.2) * Sin(WorksheetFunction.Radians(Teta4))
+    
+    Vm = (((Vmx) ^ (2)) + ((Vmy) ^ (2))) ^ (1 / 2)
+    
+    If Vmx = 0 Then
+        Tetam = 0
+    Else
+        Tetam = WorksheetFunction.Degrees(Atn(Vmy / Vmx))
+        
+        If Tetam < 0 Then
+            Tetam = 360 + Tetam
+        End If
+        
+    End If
+    
+End Sub
+
+Sub Extrair_pontos(Texto As String, Lat As Double, Lon As Double)
+
+    Lat = Mid(Texto, 5, WorksheetFunction.Search(",", Texto, WorksheetFunction.Search(",", Texto, 5) + 1) - 5)
+
+    Lon = Mid(Texto, WorksheetFunction.Search(" ", Texto, 5), WorksheetFunction.Search(")", Texto, 5) - WorksheetFunction.Search(" ", Texto, 5))
+
+End Sub
+
+Sub pitagoras(A As Double, B As Double, R As Double)
+
+R = (((A) ^ (2)) + ((B) ^ (2))) ^ (1 / 2)
+
+End Sub
+
+Sub Angulos(A As Double, R As Double, Teta As Double)
+If R = 0 Then
+    Teta = 0
+Else
+    Teta = WorksheetFunction.Degrees(WorksheetFunction.Acos(A / R))
+End If
+End Sub
+
+
+
+
+Sub Preparo_do_relatorio()
+
+    Range("C23:F25") = ""
+    Columns("G:Y") = ""
+    
+    Range("G23") = "--------------------------------------------------------------Dados Da Queda--------------------------------------------------------"
+    Range("G24") = "Hora:"
+    Range("H24") = Mid(Range("B3"), 5, 2) & "h " & Mid(Range("B3"), 8, 2) & "min " & Mid(Range("B3"), 11, 2) & "s"
+    Range("I24") = "Data:"
+    Range("J24") = Range("B4")
+    Range("K24") = "Latitude:"
+    Range("L24") = Range("D3")
+    Range("M24") = "Longitude:"
+    Range("N24") = Range("F3")
+    
+    Range("G26") = "-------------------------------------------------------------------------------------------------------------------Previsão do deslocamento---------------------------------------------------------------------------------------------------------------------"
+    Range("G27") = "Data"
+    Range("H27") = "Distancia percorrida (km)"
+    Range("J27") = "Tempo percorrido (hor:min:sec)"
+    Range("M27") = "Coodenadas de destino (Lat, Lon)"
+    Range("Q27") = "Velocidade Media do Deslocamento (m/s)"
+    Range("V27") = "Direção do Deslocamento (°)"
+    
+    Range("C23") = "Plimt() ="
+    Range("C24") = "Tempo estimado ="
+    Range("C25") = "Distancia estimada (km) ="
+    
+    Tempo_de_atualização
+    
+    Deslocamento_de_destroços
+    
+End Sub
+
+Sub Preenchimento(Data As Date, Dr As Double, t As String, P1 As Double, P2 As Double, Vm As Double, Tetam As Double)
+Dim linhas As Double
+
+linhas = 27
+
+    Do Until Cells(linhas, 7) = "" Or Cells(linhas, 7) = Data Or (Cells(linhas, 22) = Tetam And Cells(linhas, 13) = P1)
+        linhas = linhas + 1
+    Loop
+    
+    If Cells(linhas, 7) = "" Or Cells(linhas, 7) = Data Or (Cells(linhas, 22) <> Tetam And Cells(linhas, 13) <> P) Then
+        Cells(linhas, 7) = Data
+        Cells(linhas, 8) = Dr
+        Cells(linhas, 10) = t
+        Cells(linhas, 13) = P1
+        Cells(linhas, 15) = P2
+        Cells(linhas, 17) = Vm
+        Cells(linhas, 22) = Tetam
+    End If
+
+End Sub
+
+Sub Deslocamento_de_destroços()
+
+Dim X1 As Double
+Dim X2 As Double
+Dim Y1 As Double
+Dim Y2 As Double
+
+Dim Tetam As Double
+
+Dim Px As Double
+Dim Py As Double
+
+Dim Pxf As Double
+Dim Pyf As Double
+
+Dim PxfS As String
+Dim PyfS As String
+
+Dim Drx As Double
+Dim Dry As Double
+
+Dim Dx As Double
+Dim Dy As Double
+
+Dim D As Double
+
+Dim Dr As Double
+Dim Vm As Double
+Dim Ts As Double
+Dim Tmin As Double
+Dim Thor As Double
+Dim Tdia As Double
+
+Vm = Range("E21")
+Tetam = Range("F21")
+Y1 = Range("C6")
+X1 = Range("D6")
+Y2 = Range("E6")
+X2 = Range("F6")
+Py = Range("D3")
+Px = Range("F3")
+
+
+
+If Tetam < 90 Then
+    
+    If Abs(X1 - Px) > Abs(Y2 - Py) Then   'X1 e Y2
+        Calculo_trigonometrico_das_coordenadasX Py, Px, Tetam, Y2, Pxf
+        Pyf = Y2
+    Else
+        Calculo_trigonometrico_das_coordenadasY Py, Px, Tetam, Pyf, X1
+        Pxf = X1
+    End If
+
+ElseIf Tetam <= 180 Then
+    
+    If Abs(X2 - Px) > Abs(Y2 - Py) Then   'X2 e Y2
+        Calculo_trigonometrico_das_coordenadasX Py, Px, Tetam, Y2, Pxf
+        Pyf = Y2
+    Else
+        Calculo_trigonometrico_das_coordenadasY Py, Px, Tetam, Pyf, X2
+        Pxf = X2
+    End If
+
+ElseIf Tetam <= 270 Then
+
+    If Abs(X2 - Px) > Abs(Y1 - Py) Then   'X2 e Y1
+        Calculo_trigonometrico_das_coordenadasX Py, Px, Tetam, Y1, Pxf
+        Pyf = Y1
+    Else
+        Calculo_trigonometrico_das_coordenadasY Py, Px, Tetam, Pyf, X2
+        Pxf = X2
+    End If
+
+ElseIf Tetam <= 360 Then
+
+    If Abs(X1 - Px) > Abs(Y1 - Py) Then   'X1 e Y1
+        Calculo_trigonometrico_das_coordenadasX Py, Px, Tetam, Y1, Pxf
+        Pyf = Y1
+    Else
+        Calculo_trigonometrico_das_coordenadasY Py, Px, Tetam, Pyf, X1
+        Pxf = X1
+    End If
+
+End If
+
+Calculo_da_distancia_entre_coordenadas Py, Px, Pyf, Pxf, Dr
+
+t Ts, Tmin, Thor, Tdia, Vm, Dr
+
+Range("D23") = Pyf
+Range("E23") = Pxf
+
+Range("E24") = (Tdia Mod 1000) & "D " & Abs(((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) Mod 100)) & "h " & Abs(((((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) - ((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) Mod 100)) * 100 * 60 / 100) Mod 100)) & "min " & Abs(((((((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) - ((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) Mod 100)) * 100 * 60 / 100) - ((((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) - ((((Tdia Mod 1000) - Tdia) * 100 * 24 / 100) Mod 100)) * 100 * 60 / 100) Mod 100)) * 100 * 60 / 100) Mod 100)) & "s"
+Range("E25") = Dr
+
+conversão_de_cordenadas_decimais_em_geograficas Pyf, Pxf, PyfS, PxfS
+Range("D26") = PyfS
+Range("E26") = PxfS
+
+End Sub
+
+
+Sub Calculo_da_distancia_entre_coordenadas(Lat1 As Double, Lon1 As Double, Lat2 As Double, Lon2 As Double, D As Double)
+
+    D = WorksheetFunction.Acos((Cos(WorksheetFunction.Radians(90 - Lat1)) * Cos(WorksheetFunction.Radians(90 - Lat2))) + (Sin(WorksheetFunction.Radians(90 - Lat1)) * Sin(WorksheetFunction.Radians(90 - Lat2)) * Cos(WorksheetFunction.Radians(Lon2 - Lon1)))) * 6371
+
+End Sub
+
+Sub Calculo_trigonometrico_das_coordenadasY(Lat1 As Double, Lon1 As Double, Tetam As Double, RLat2 As Double, Lon2 As Double)
+
+Dim Dx As Double
+Dim D As Double
+
+Dx = Abs(Lon2 - Lon1)
+D = Dx * Cos(WorksheetFunction.Radians(Tetam))
+
+RLat2 = Lat1 + ((((Dx) ^ (2)) - ((D) ^ (2))) ^ (1 / 2)) * (Cos(WorksheetFunction.Radians(Tetam)) / Abs(Cos(WorksheetFunction.Radians(Tetam))))
+
+
+End Sub
+Sub Calculo_trigonometrico_das_coordenadasX(Lat1 As Double, Lon1 As Double, Tetam As Double, Lat2 As Double, RLon2 As Double)
+Dim Dy As Double
+
+
+Dy = Abs(Lat2 - Lat1)
+D = Dy * Sin(WorksheetFunction.Radians(Tetam))
+
+RLon2 = Lon1 + ((((Dy) ^ (2)) - ((D) ^ (2))) ^ (1 / 2)) * (Cos(WorksheetFunction.Radians(Tetam)) / Abs(Cos(WorksheetFunction.Radians(Tetam))))
+
+
+End Sub
+Sub Calculo_trigonometrico_das_coordenadas1(Lat1 As Double, Lon1 As Double, Vm As Double, Tetam As Double, Lat2 As Double, Lon2 As Double, Dy As Double, Dx As Double, Dr As Double)
+
+Dy = Vm * Sin(WorksheetFunction.Radians(Tetam))
+Dx = Vm * Cos(WorksheetFunction.Radians(Tetam))
+Lat2 = Lat1 + Dy
+Lon2 = Lon1 + Dx
+Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+Dr = Dr * 1000
+
+End Sub
+Sub Calculo_trigonometrico_das_coordenadas2(Ts As Double, Tmin As Double, Thor As Double, t As Double, Lat1 As Double, Lon1 As Double, Vm As Double, Tetam As Double, Lat2 As Double, Lon2 As Double, Dr As Double)
+
+Dim Erro As Double
+
+Dim Dy As Double
+Dim Dx As Double
+
+Dim Drv As Double
+
+Dim Correcao As Double
+
+'Coletando dados__________________________________________
+    'Lat1 = Range("Y50")
+    'Lon1 = Range("Z50")
+    'Vm = Range("AB50")
+    'Tetam = Range("AC50")
+    
+    'Ts = Range("AB51")
+    'Tmin = Range("AB52")
+    'Thor = Range("AB53")
+    
+    t = 86400 - (Thor * 3600 + Tmin * 60 + Ts)
+    
+    
+'Calculando__________________________________________
+
+Drv = t * Vm
+
+Dy = Vm * Sin(WorksheetFunction.Radians(Tetam))
+Dx = Vm * Cos(WorksheetFunction.Radians(Tetam))
+Lat2 = Lat1 + Dy
+Lon2 = Lon1 + Dx
+Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+Dr = Dr * 1000
+
+Correcao = Drv / Dr
+
+Dy = Vm * Sin(WorksheetFunction.Radians(Tetam)) * Correcao
+Dx = Vm * Cos(WorksheetFunction.Radians(Tetam)) * Correcao
+Lat2 = Lat1 + Dy
+Lon2 = Lon1 + Dx
+Calculo_da_distancia_entre_coordenadas Lat1, Lon1, Lat2, Lon2, Dr
+Dr = Dr * 1000
+
+Erro = 100 - (Dr / Drv * 100)
+'Entregando__________________________________________
+
+End Sub
+Sub t(Ts As Double, Tmin As Double, Thor As Double, Tdia As Double, Vm As Double, Dr As Double)
+
+Ts = (Dr * 1000) / Vm
+Tmin = Ts / 60
+Thor = Tmin / 60
+Tdia = Thor / 24
+
+End Sub
+Sub Tempo_de_atualização()
+
+Dim Thor As Double
+Dim Tmin As Integer
+Dim Ts As Integer
+
+Dim t As Double
+
+Dim Time As String
+
+Dim Dr As Double
+Dim Vm As Double
+
+Dim Tetam As Double
+
+Dim Px As Double
+Dim Py As Double
+
+Dim Pxf As Double
+Dim Pyf As Double
+
+Dim Dx As Double
+Dim Dy As Double
+
+    Thor = Mid(Range("H24"), 1, 2)
+    Tmin = Mid(Range("H24"), 5, 2)
+    Ts = Mid(Range("H24"), 11, 2)
+    
+    TD = Thor * 3600 + Tmin * 60 + Ts
+    Tns = 86400 - TD
+    t = Tns / 3600
+    
+    'fazer mapeamento Noaa
+    
+    Vm = Range("E21")
+    Dr = Tns * Vm
+    
+    Tetam = Range("F21")
+    Py = Range("D3")
+    Px = Range("F3")
+    
+    Calculo_trigonometrico_das_coordenadas1 Py, Px, Vm, Tetam, Pyf, Pxf, Dy, Dx, Dr
+    
+    Dr = Dr / 1000 ' apresentação em km
+    
+    Time = (t Mod 100) & "h " & Abs((((t Mod 100) - t) * 100 * 60 / 100) Mod 100) & "min " & Abs((((((t Mod 100) - t) * 100 * 60 / 100) - (((t Mod 100) - t) * 100 * 60 / 100) Mod 100) * 100 * 60 / 100) Mod 100) & "s"
+    
+    Preenchimento Range("J24"), Dr, Time, Pyf, Pxf, Vm, Tetam
+    
+End Sub
+Sub Tempo_de_atualização2()
+
+Dim Thor As Double
+Dim Tmin As Double
+Dim Ts As Double
+
+Dim t As Double
+
+Dim Dr As Double
+Dim Vm As Double
+
+Dim Tetam As Double
+Dim Time As String
+
+Dim Px As Double
+Dim Py As Double
+
+Dim Pxf As Double
+Dim Pyf As Double
+
+Dim linhas As Double
+    linhas = 27
+    Do Until Cells(linhas, 8) = ""
+    linhas = linhas + 1
+    Loop
+
+    Thor = Mid(Cells(linhas - 1, 10), 1, WorksheetFunction.Search("h", Cells(linhas - 1, 10), 1) - 1)
+    Tmin = Mid(Cells(linhas - 1, 10), 4, WorksheetFunction.Search("min", Cells(linhas - 1, 10), 1) - 4)
+    Ts = Mid(Cells(linhas - 1, 10), 10, WorksheetFunction.Search("s", Cells(linhas - 1, 10), 1) - 10)
+    
+    
+    Vm = Range("E21")
+    Tetam = Range("F21")
+    Py = Cells(linhas - 1, 13)
+    Px = Cells(linhas - 1, 15)
+    
+    Calculo_trigonometrico_das_coordenadas2 Ts, Tmin, Thor, t, Py, Px, Vm, Tetam, Pyf, Pxf, Dr
+
+    t = t / 3600
+
+Time = (t Mod 100) & "h " & Abs((((t Mod 100) - t) * 100 * 60 / 100) Mod 100) & "min " & Abs((((((t Mod 100) - t) * 100 * 60 / 100) - (((t Mod 100) - t) * 100 * 60 / 100) Mod 100) * 100 * 60 / 100) Mod 100) & "s"
+    
+
+    Preenchimento Cells(linhas, 7), Dr, Time, Pyf, Pxf, Vm, Tetam
+    
+End Sub
+Sub conversão_de_cordenadas_decimais_em_geograficas(Lat As Double, Lon As Double, LatR As String, LonR As String)
+
+Dim LatRa As Double
+Dim LatRb As Double
+Dim LatRc As Double
+Dim LatRd As Double
+
+Dim LonRa As Double
+Dim LonRb As Double
+Dim LonRc As Double
+Dim LonRd As Double
+
+Dim Cal As Double
+
+
+    LatRa = Mid(Lat, 1, WorksheetFunction.Search(",", Lat, 1) - 1)
+    Cal = (Abs(Lat) - Abs(LatRa)) * 60
+    
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        
+        If Cal = 0 Then
+        LatRb = 0
+        Else
+        LatRb = Cal
+        End If
+    Else
+        LatRb = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    Cal = (Cal - LatRb) * 60
+    
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        If Cal = 0 Then
+        LatRc = 0
+        Else
+        LatRc = Cal
+        End If
+    Else
+        LatRc = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    Cal = ((Cal - LatRc) * 10)
+    
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        If Cal = 0 Then
+        LatRd = 0
+        Else
+        LatRd = Cal
+        End If
+    Else
+        LatRd = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    
+    If LatRb / 10 < 1 Then
+    LatR = Abs(LatRa) & "°" & "0" & LatRb & "'"
+    Else
+    LatR = Abs(LatRa) & "°" & LatRb & "'"
+    End If
+    
+    If LatRc / 10 < 1 Then
+    LatR = LatR & "0" & Replace((LatRc + ((LatRd * 100) Mod 10000000) / 1000), ",", ".") & "''"
+    Else
+    LatR = LatR & Replace((LatRc + ((LatRd * 100) Mod 10000000) / 1000), ",", ".") & "''"
+    End If
+    
+    If LatRa > 0 Then
+    LatR = LatR & "N"
+    Else
+    LatR = LatR & "S"
+    End If
+    
+    
+    
+    LonRa = Mid(Lon, 1, WorksheetFunction.Search(",", Lon, 1) - 1)
+    Cal = (Abs(Lon) - Abs(LonRa)) * 60
+    
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        If Cal = 0 Then
+        LonRb = 0
+        Else
+        LonRb = Cal
+        End If
+    Else
+        LonRb = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    Cal = (Cal - LonRb) * 60
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        If Cal = 0 Then
+        LonRc = 0
+        Else
+        LonRc = Cal
+        End If
+    Else
+        LonRc = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    Cal = ((Cal - LonRc) * 10)
+    If (Cal - (Cal Mod 10000000)) <= 0 Then
+        If Cal = 0 Then
+        LonRd = 0
+        Else
+        LonRd = Cal
+        End If
+    Else
+        LonRd = Mid(Cal, 1, WorksheetFunction.Search(",", Cal, 1) - 1)
+    End If
+    
+    
+    If LonRb / 10 < 1 Then
+    LonR = Abs(LonRa) & "°" & "0" & LonRb & "'"
+    Else
+    LonR = Abs(LonRa) & "°" & LonRb & "'"
+    End If
+    
+    If LonRc / 10 < 1 Then
+    
+    LonR = LonR & "0" & Replace((LonRc + ((LonRd * 100) Mod 10000000) / 1000), ",", ".") & "''"
+    Else
+    LonR = LonR & Replace((LonRc + ((LonRd * 100) Mod 10000000) / 1000), ",", ".") & "''"
+    End If
+    
+    If LonRa > 0 Then
+    LonR = LonR & "E"
+    Else
+    LonR = LonR & "W"
+    End If
+
+
+End Sub
+
+
+'=======================================================================================================================
+'=======================================================================================================================
+'=======================================================================================================================
+Sub Atualizar()
+
+Dim linhas As Double
+Dim Startlinhas As Double
+Dim Lat As Double
+Dim Lon As Double
+Dim Datas As Integer
+Dim Stoplinhas As Double
+Dim t As Double
+Dim Times As String
+
+Dim Site_NOAA_1 As String
+Dim Site_NOAA_2 As String
+Dim Navegador As String
+
+Sheets(3).Select
+
+linhas = 27
+
+Do Until Cells(linhas, 7) = ""
+    linhas = linhas + 1
+Loop
+linhas = linhas - 1
+Startlinhas = linhas
+
+If Date = Cells(linhas, 7) Or (Date - 1) = Cells(linhas, 7) Then
+    
+    
+    t = 24 - Time * 24
+    Times = (t Mod 100) & "h " & Abs((((t Mod 100) - t) * 100 * 60 / 100) Mod 100) & "min " & Abs(((((((t Mod 100) - t) * 100 * 60 / 100) Mod 100) - (((t Mod 100) - t) * 100 * 60 / 100)) * 100 * 60 / 100) Mod 100) & "s"
+   
+    MsgBox "Base de dados esta atualizada com as ultimas informações, por favor aguarde ( " & Times & " ) para a proxima atualização.", vbExclamation, "Dados atualizados"
+    Exit Sub
+    
+End If
+
+    Datas = Date - Cells(linhas, 7)
+    linhas = linhas + 1
+    Stoplinhas = linhas + Datas
+    Do Until Stoplinhas = linhas
+    
+    Cells(linhas, 7) = Cells(linhas - 1, 7) + 1
+    
+    linhas = linhas + 1
+    Loop
+    linhas = linhas - Datas
+    
+    
+    Do Until Stoplinhas = linhas
+    
+    If (Date) <> Cells(linhas, 7) Then
+        Range("A14") = Year(Cells(linhas, 7))
+        Range("A15") = Month(Cells(linhas, 7))
+        Range("A16") = Day(Cells(linhas, 7))
+        
+        Call SendKeys("{TAB}", True)
+        
+        Navegador = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+        
+        Site_NOAA_1 = Range("B14")
+        Site_NOAA_2 = Range("B15")
+        
+        
+        Application.Wait (Now + TimeValue("00:00:10"))
+        
+        Shell Navegador & " " & Site_NOAA_1
+
+        Application.Wait (Now + TimeValue("00:00:10"))
+    
+        Shell Navegador & " " & Site_NOAA_2
+
+        Application.Wait (Now + TimeValue("00:00:10"))
+        
+        Extraindo_informacoes
+        Sheets(3).Select
+        Range("D3") = Cells(linhas - 1, 13)
+        Range("F3") = Cells(linhas - 1, 15)
+        Coordenadas_do_objeto
+        Calculando_a_intencidade_do_volume_de_agua
+        Tempo_de_atualização2
+        Deslocamento_de_destroços
+        
+    Else
+
+                linhas = Stoplinhas - 1
+                Cells(linhas, 7) = ""
+    
+    End If
+    linhas = linhas + 1
+    Loop
+    
+    MsgBox "Atualização realizada com sucesso", vbInformation, "Completo"
+    
+End Sub
+
+Sub TxtTab()
+
+    Pasta_de_Relatorios
+    Dim Texto As String
+    Dim linhas As Integer
+    
+    linhas = 23
+    
+    Sheets(1).Select
+    Texto = Range("B7") & "\Relatorios"
+    Sheets(3).Select
+    Texto = Texto & "\Caso(" & Mid(Range("B2"), 2, WorksheetFunction.Search("(", Range("B2"), 1) - 3) & ").txt"
+    
+    Open Texto For Output As 1
+    
+    
+        Print #1, Cells(linhas, 7)
+        linhas = linhas + 1
+        Print #1, Cells(linhas, 7) & vbTab & Cells(linhas, 8) & vbTab & Cells(linhas, 9) & vbTab & Cells(linhas, 10) & vbTab & Cells(linhas, 11) & vbTab & Cells(linhas, 12) & vbTab & Cells(linhas, 13) & vbTab & Cells(linhas, 14)
+        linhas = linhas + 1
+        Print #1, ""
+        linhas = linhas + 1
+        Print #1, Cells(linhas, 7)
+        linhas = linhas + 1
+        Print #1, Cells(linhas, 7) & vbTab & vbTab & Cells(linhas, 8) & vbTab & Cells(linhas, 10) & vbTab & Cells(linhas, 13) & vbTab & vbTab & Cells(linhas, 17) & vbTab & Cells(linhas, 22)
+        linhas = linhas + 1
+        
+        Do Until Cells(linhas, 7) = ""
+        
+        Print #1, Cells(linhas, 7) & vbTab & Cells(linhas, 8) & vbTab & vbTab & Cells(linhas, 10) & vbTab & vbTab & vbTab & Cells(linhas, 13) & vbTab & Cells(linhas, 15) & vbTab & Cells(linhas, 17) & vbTab & vbTab & vbTab & Cells(linhas, 22)
+        linhas = linhas + 1
+        
+        Loop
+        
+    Close 1
+    
+    
+End Sub
+Sub TxtLinha()
+
+    Pasta_de_Relatorios
+    Dim Texto As String
+    Dim linhas As Integer
+    
+    linhas = 27
+    
+    Sheets(1).Select
+    Texto = Range("B7") & "\Relatorios"
+    Sheets(3).Select
+    Texto = Texto & "\Caso(" & Mid(Range("B2"), 2, WorksheetFunction.Search("(", Range("B2"), 1) - 3) & ") Relatorio para dispositivos.txt"
+    
+    Open Texto For Output As 1
+    
+    
+        'Print #1, Cells(linhas, 7)
+        'linhas = linhas + 1
+        'Print #1, Cells(linhas, 7) & vbTab & Cells(linhas, 8) & vbTab & Cells(linhas, 9) & vbTab & Cells(linhas, 10) & vbTab & Cells(linhas, 11) & vbTab & Cells(linhas, 12) & vbTab & Cells(linhas, 13) & vbTab & Cells(linhas, 14)
+        'linhas = linhas + 1
+        'Print #1, ""
+        'linhas = linhas + 1
+        'Print #1, Cells(linhas, 7)
+        'linhas = linhas + 1
+        Print #1, Cells(linhas, 7) & " | " & Cells(linhas, 8) & " | " & Cells(linhas, 10) & " | " & "Coordenadas de destino (Lat)" & " | " & "Coordenadas de destino (Lon)" & " | " & Cells(linhas, 17) & " | " & Cells(linhas, 22)
+        linhas = linhas + 1
+        
+        Do Until Cells(linhas, 7) = ""
+        
+        Print #1, Cells(linhas, 7) & " | " & Cells(linhas, 8) & " | " & Cells(linhas, 10) & " | " & Cells(linhas, 13) & " | " & Cells(linhas, 15) & " | " & Cells(linhas, 17) & " | " & Cells(linhas, 22)
+        linhas = linhas + 1
+        
+        Loop
+        
+    Close 1
+    
+    
+End Sub
+
+Sub Txt_Cod_Grafic()
+
+    Pasta_de_Relatorios
+    Dim Texto As String
+    Dim Lat As String
+    Dim Lon As String
+    Dim linhas As Integer
+    
+    linhas = 27
+    
+    Sheets(1).Select
+    Texto = Range("B7") & "\Relatorios"
+    Sheets(3).Select
+    Texto = Texto & "\Caso(" & Mid(Range("B2"), 2, WorksheetFunction.Search("(", Range("B2"), 1) - 3) & ") Google Earth.txt"
+    
+    Open Texto For Output As 1
+    
+    
+        'Print #1, Cells(linhas, 7)
+        'linhas = linhas + 1
+        'Print #1, Cells(linhas, 7) & vbTab & Cells(linhas, 8) & vbTab & Cells(linhas, 9) & vbTab & Cells(linhas, 10) & vbTab & Cells(linhas, 11) & vbTab & Cells(linhas, 12) & vbTab & Cells(linhas, 13) & vbTab & Cells(linhas, 14)
+        'linhas = linhas + 1
+        'Print #1, ""
+        'linhas = linhas + 1
+        'Print #1, Cells(linhas, 7)
+        'linhas = linhas + 1
+        Print #1, Cells(linhas, 7) & vbTab & Cells(linhas, 8) & vbTab & Cells(linhas, 10) & vbTab & "Coordenadas de destino (Lat)" & vbTab & "Coordenadas de destino (Lon)" & vbTab & Cells(linhas, 17) & vbTab & Cells(linhas, 22)
+        linhas = linhas + 1
+        
+        conversão_de_cordenadas_decimais_em_geograficas Range("L24"), Range("N24"), Lat, Lon
+        Print #1, "Local da queda " & Range("J24") & vbTab & "0" & vbTab & "0" & vbTab & Lat & vbTab & Lon & vbTab & "0" & vbTab & "0"
+        linhas = linhas + 1
+        
+        Do Until Cells(linhas, 7) = ""
+        
+        conversão_de_cordenadas_decimais_em_geograficas Cells(linhas, 13), Cells(linhas, 15), Lat, Lon
+        Print #1, Cells(linhas, 7) & vbTab & Replace(Cells(linhas, 8), ",", ".") & vbTab & Cells(linhas, 10) & vbTab & Lat & vbTab & Lon & vbTab & Replace(Cells(linhas, 17), ",", ".") & vbTab & Replace(Cells(linhas, 22), ",", ".")
+        linhas = linhas + 1
+        
+        Loop
+        
+    Close 1
+    
+    
+End Sub
+
+Sub Csv_Cod_Grafic()
+
+    Pasta_de_Relatorios
+    
+    Dim Planilha_Atual As Workbook
+    Dim Planilha_Externa As Workbook
+    Set Planilha_Atual = ActiveWorkbook
+    
+    On Error GoTo Erro
+    Dim Arquivos As Workbook
+    
+    Dim Texto As String
+    Dim Lat As String
+    Dim Lon As String
+    Dim linhas As Integer
+    Dim linhas2 As Integer
+    
+    Dim Data
+    Dim Dist As Double
+    Dim Velo As Double
+    Dim Dire As Double
+    
+    Dim DataT As String
+    Dim DistT As String
+    Dim VeloT As String
+    Dim DireT As String
+    
+    linhas = 27
+    linhas2 = 1
+    
+    Sheets(1).Select
+    Texto = Range("B7") & "\Relatorios"
+    Sheets(3).Select
+    Texto = Texto & "\Caso(" & Mid(Range("B2"), 2, WorksheetFunction.Search("(", Range("B2"), 1) - 3) & ") Google Earth.xlsx"
+    
+    
+    
+    DataT = Cells(linhas, 7)
+    DistT = Cells(linhas, 8)
+    Lat = "Coordenadas de destino (Lat)"
+    Lon = "Coordenadas de destino (Lon)"
+    VeloT = Cells(linhas, 17)
+    DireT = Cells(linhas, 22)
+
+    Set Arqivo = Application.Workbooks.Add
+    Set Planilha_Externa = ActiveWorkbook
+
+    Cells(linhas2, 1) = DataT
+    Cells(linhas2, 2) = DistT
+    Cells(linhas2, 3) = Lat
+    Cells(linhas2, 4) = Lon
+    Cells(linhas2, 5) = VeloT
+    Cells(linhas2, 6) = DireT
+    
+    linhas2 = linhas2 + 1
+
+        Planilha_Atual.Activate
+        conversão_de_cordenadas_decimais_em_geograficas Range("L24"), Range("N24"), Lat, Lon
+        DataT = "Local da queda " & Range("J24")
+        DistT = "0"
+        VeloT = "0"
+        DireT = "0"
+        
+        Planilha_Externa.Activate
+        Cells(linhas2, 1) = DataT
+        Cells(linhas2, 2) = "| " & DistT
+        Cells(linhas2, 3) = Lat
+        Cells(linhas2, 4) = Lon
+        Cells(linhas2, 5) = "| " & VeloT
+        Cells(linhas2, 6) = "| " & DireT
+        
+        linhas2 = linhas2 + 1
+        linhas = linhas + 1
+        
+    
+    Planilha_Atual.Activate
+    
+        Do Until Cells(linhas, 7) = ""
+        
+        Planilha_Atual.Activate
+        conversão_de_cordenadas_decimais_em_geograficas Cells(linhas, 13), Cells(linhas, 15), Lat, Lon
+        Data = Cells(linhas, 7)
+        DistT = Replace(Cells(linhas, 8), ",", ".")
+        VeloT = Replace(Cells(linhas, 17), ",", ".")
+        DireT = Replace(Cells(linhas, 22), ",", ".")
+        
+        Planilha_Externa.Activate
+        Cells(linhas2, 1) = Data
+        Cells(linhas2, 2) = "| " & DistT
+        Cells(linhas2, 3) = Replace(Lat, ",", ".")
+        Cells(linhas2, 4) = Replace(Lon, ",", ".")
+        Cells(linhas2, 5) = "| " & VeloT
+        Cells(linhas2, 6) = "| " & DireT
+        
+        linhas2 = linhas2 + 1
+        linhas = linhas + 1
+        Planilha_Atual.Activate
+        
+        Loop
+    
+    
+
+    Planilha_Externa.Activate
+    
+    Application.DisplayAlerts = False
+        
+        ActiveWorkbook.SaveAs Texto
+        ActiveWorkbook.Close savechanges:=False
+        
+    Application.DisplayAlerts = True
+    
+    Exit Sub
+Erro:
+    MsgBox "Arquivo com erro", vbInformation, "Arquivo"
+
+    
+End Sub
+
+Sub Exportar_Como()
+Dim MSG As VbMsgBoxResult
+
+    Sheets(3).Select
+    Range("C32") = "-------------------------------------------------"
+    Range("C33") = "Exportar Como:"
+    Range("C34") = "Visualização em .txt:"
+    Range("C35") = "Tabela (Tab) em .txt*:"
+    Range("C36") = "Tabela ( | ) em .txt:"
+    Range("C37") = "Tabela em .xlsx**:"
+    Range("C39") = "* compativel com Google Earth Pro."
+    Range("C40") = "** compativel com Google My Maps."
+    Range("C41") = "-------------------------------------------------"
+    
+    If Range("E34") = "" And Range("E35") = "" And Range("E36") = "" And Range("E37") = "" Then
+        
+        MSG = MsgBox("Nenhuma forma de arquivo foi selecionada, por padrão será selecionada a visualização em .txt, deseja continuar?", vbYesNo, "Exportar como")
+        If MSG = vbYes Then
+            Range("E34") = "X"
+        End If
+        If MSG = vbNo Then
+            Exit Sub
+        End If
+        
+    End If
+    
+    If Range("E34") <> "" Then
+        TxtTab
+    End If
+    If Range("E35") <> "" Then
+        Txt_Cod_Grafic
+    End If
+    If Range("E36") <> "" Then
+        TxtLinha
+    End If
+    If Range("E37") <> "" Then
+        Csv_Cod_Grafic
+    End If
+    
+    MsgBox "Relatórios gerados com sucesso, verifique a pasta (Relatorios).", vbInformation, "Arquivos gerados"
+    
+End Sub
